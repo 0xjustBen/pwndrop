@@ -91,6 +91,11 @@ func main() {
 	}
 	api.SetConfig(core.Cfg)
 
+	log_file := filepath.Join(core.Cfg.GetDataDir(), "pwndrop.log")
+	if err := log.SetLogFile(log_file); err != nil {
+		log.Error("failed to open log file %s: %v", log_file, err)
+	}
+
 	if *debug_log {
 		log.SetVerbosityLevel(0)
 	}

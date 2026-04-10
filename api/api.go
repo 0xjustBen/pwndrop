@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/kgretzky/pwndrop/config"
+	"github.com/kgretzky/pwndrop/log"
 )
 
 type ApiResponse struct {
@@ -46,6 +47,25 @@ func DumpResponse(w http.ResponseWriter, message string, http_status int, error_
 	w.WriteHeader(http_status)
 	w.Header().Set("content-type", "application/json")
 	w.Write(d)
+}
+
+func getMachineName(r *http.Request) string {
+	machineName := r.FormValue("machine_name")
+	if machineName != "" {
+		return machineName
+	}
+	return r.Header.Get("X-Machine-Name")
+}
+
+func AuditEvent(uid int, action, status, fileName, machineName string, r *http.Request) {
+	if machineName == "" {
+		machineName = "unknown"
+	}
+	if fileName == "" {
+		fileName = "unknown"
+	}
+	log.Info("audit user=%d action=%s status=%s file=%q machine=%q method=%s path=%s ip=%s",
+		uid, action, status, fileName, machineName, r.Method, r.URL.Path, r.RemoteAddr)
 }
 
 func SetConfig(cfg *config.Config) {

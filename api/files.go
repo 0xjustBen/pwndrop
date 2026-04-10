@@ -20,18 +20,22 @@ func FileOptionsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FileCreateHandler(w http.ResponseWriter, r *http.Request) {
-	// #### CHECK IF AUTHENTICATED ####
-	_, err := AuthSession(r)
+	uid, err := AuthSession(r)
 	if err != nil {
+		log.Warning("audit user=- action=file_upload status=unauthorized machine=%q method=%s path=%s ip=%s",
+			getMachineName(r), r.Method, r.URL.Path, r.RemoteAddr)
 		DumpResponse(w, "unauthorized", http.StatusUnauthorized, API_ERROR_BAD_AUTHENTICATION, nil)
 		return
 	}
 
+	machineName := getMachineName(r)
 	data_dir := Cfg.GetDataDir()
-	user_id := 1
+	user_id := uid
 
 	file, fhead, err := r.FormFile("file")
 	if err != nil {
+		log.Warning("audit user=%d action=file_upload status=failure machine=%q err=%v ip=%s",
+			uid, machineName, err, r.RemoteAddr)
 		DumpResponse(w, err.Error(), http.StatusBadRequest, API_ERROR_BAD_REQUEST, nil)
 		return
 	}
@@ -49,6 +53,8 @@ func FileCreateHandler(w http.ResponseWriter, r *http.Request) {
 	os.Mkdir(filepath.Join(data_dir, "files"), 0700)
 	save_path := filepath.Join(data_dir, "files", fname)
 	if err := SaveUploadedFile(file, fhead, save_path); err != nil {
+		log.Warning("audit user=%d action=file_upload status=failure file=%q machine=%q err=%v ip=%s",
+			uid, name, machineName, err, r.RemoteAddr)
 		DumpResponse(w, err.Error(), http.StatusInternalServerError, API_ERROR_FILE_SAVE_FAILED, nil)
 		return
 	}
@@ -56,6 +62,8 @@ func FileCreateHandler(w http.ResponseWriter, r *http.Request) {
 	var fi os.FileInfo
 	if fi, err = os.Stat(save_path); err != nil {
 		os.Remove(save_path)
+		log.Warning("audit user=%d action=file_upload status=failure file=%q machine=%q err=%v ip=%s",
+			uid, name, machineName, err, r.RemoteAddr)
 		DumpResponse(w, err.Error(), http.StatusInternalServerError, API_ERROR_FILE_NOT_FOUND, nil)
 		return
 	}
@@ -79,9 +87,13 @@ func FileCreateHandler(w http.ResponseWriter, r *http.Request) {
 	f, err := storage.FileCreate(o)
 	if err != nil {
 		os.Remove(save_path)
+		log.Warning("audit user=%d action=file_upload status=failure file=%q machine=%q err=%v ip=%s",
+			uid, name, machineName, err, r.RemoteAddr)
 		DumpResponse(w, err.Error(), http.StatusInternalServerError, API_ERROR_FILE_DATABASE_FAILED, nil)
 		return
 	}
+
+	AuditEvent(uid, "file_upload", "success", name, machineName, r)
 	DumpResponse(w, "ok", http.StatusOK, 0, f)
 }
 
