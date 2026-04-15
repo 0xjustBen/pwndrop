@@ -1,4 +1,4 @@
 #!/bin/bash
 echo Building...
-GOARCH=amd64 go build -ldflags="-s -w" -o ./build/pwndrop -mod=vendor main.go
+GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ./build/pwndrop main.go
 echo Done.

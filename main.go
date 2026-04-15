@@ -91,7 +91,11 @@ func main() {
 	}
 	api.SetConfig(core.Cfg)
 
-	log_file := filepath.Join(core.Cfg.GetDataDir(), "pwndrop.log")
+	if _, err := os.Stat("/var/log"); os.IsNotExist(err) {
+		fmt.Println("/var/log does not exist")
+		os.Exit(1)
+	}
+	log_file := "/var/log/pwndrop.log"
 	if err := log.SetLogFile(log_file); err != nil {
 		log.Error("failed to open log file %s: %v", log_file, err)
 	}
