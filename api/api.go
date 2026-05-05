@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/kgretzky/pwndrop/config"
 	"github.com/kgretzky/pwndrop/log"
+	"github.com/kgretzky/pwndrop/storage"
 )
 
 type ApiResponse struct {
@@ -57,15 +59,26 @@ func getMachineName(r *http.Request) string {
 	return r.Header.Get("X-Machine-Name")
 }
 
+func realIP(r *http.Request) string {
+	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+		return fwd
+	}
+	return r.RemoteAddr
+}
+
 func AuditEvent(uid int, action, status, fileName, machineName string, r *http.Request) {
+	username := fmt.Sprintf("uid:%d", uid)
+	if u, err := storage.UserGet(uid); err == nil {
+		username = u.Name
+	}
 	if machineName == "" {
-		machineName = "unknown"
+		machineName = "-"
 	}
 	if fileName == "" {
-		fileName = "unknown"
+		fileName = "-"
 	}
-	log.Info("audit user=%d action=%s status=%s file=%q machine=%q method=%s path=%s ip=%s",
-		uid, action, status, fileName, machineName, r.Method, r.URL.Path, r.RemoteAddr)
+	log.Info("AUDIT action=%s status=%s user=%q file=%q machine=%q url=%s ip=%s",
+		action, status, username, fileName, machineName, r.URL.Path, realIP(r))
 }
 
 func SetConfig(cfg *config.Config) {

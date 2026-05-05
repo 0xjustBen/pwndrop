@@ -70,6 +70,12 @@ func (s *Http) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", mime_type)
 			w.WriteHeader(200)
 			io.Copy(w, fo)
+			clientIP := r.Header.Get("X-Forwarded-For")
+			if clientIP == "" {
+				clientIP = r.RemoteAddr
+			}
+			log.Info("AUDIT action=file_download status=success user=anonymous file=%q url=%s size=%d ip=%s",
+				f.Name, r.URL.Path, f.FileSize, clientIP)
 		}
 		return
 	}

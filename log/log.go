@@ -18,6 +18,7 @@ var logf *os.File = nil
 var mtx_log *sync.Mutex = &sync.Mutex{}
 var enableOutput = true
 var verboseLevel = INFO
+var enableFileOutput = true // disable file logging during init
 
 const (
 	DEBUG = iota
@@ -53,6 +54,10 @@ func SetOutput(o io.Writer) {
 
 func SetVerbosityLevel(lvl int) {
 	verboseLevel = lvl
+}
+
+func SetFileLogging(enable bool) {
+	enableFileOutput = enable
 }
 
 func SetLogFile(path string) error {
@@ -171,7 +176,7 @@ func log_message(lvl int, mod int, format string, args ...interface{}) {
 	if enableOutput {
 		fmt.Fprint(stdout, output+"\n")
 	}
-	if logf != nil {
+	if logf != nil && enableFileOutput {
 		logf.WriteString(log_output + "\n")
 		logf.Sync()
 	}

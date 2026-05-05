@@ -70,12 +70,14 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	o, err := storage.UserGetByName(j.Username)
 	if err != nil {
+		log.Warning("AUDIT action=login status=failure user=%q ip=%s", j.Username, realIP(r))
 		DumpResponse(w, err.Error(), http.StatusUnauthorized, API_ERROR_BAD_AUTHENTICATION, nil)
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(o.Password), []byte(j.Password))
 	if err != nil {
+		log.Warning("AUDIT action=login status=failure user=%q ip=%s", j.Username, realIP(r))
 		DumpResponse(w, err.Error(), http.StatusUnauthorized, API_ERROR_BAD_AUTHENTICATION, nil)
 		return
 	}
@@ -92,6 +94,8 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		DumpResponse(w, err.Error(), http.StatusInternalServerError, API_ERROR_FILE_DATABASE_FAILED, nil)
 		return
 	}
+
+	log.Info("AUDIT action=login status=success user=%q ip=%s", o.Name, realIP(r))
 
 	resp := &LoginResponse{
 		Username: o.Name,
@@ -131,6 +135,12 @@ func LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 		DumpResponse(w, err.Error(), http.StatusInternalServerError, API_ERROR_FILE_DATABASE_FAILED, nil)
 		return
 	}
+
+	username := "-"
+	if u, err := storage.UserGet(s.Uid); err == nil {
+		username = u.Name
+	}
+	log.Info("AUDIT action=logout status=success user=%q ip=%s", username, realIP(r))
 
 	deleteCookie(AUTH_COOKIE_NAME, w)
 	DumpResponse(w, "ok", http.StatusOK, 0, nil)

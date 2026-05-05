@@ -16,6 +16,8 @@ require (
 	gopkg.in/ini.v1 v1.67.1
 )
 
+replace github.com/kgretzky/pwndrop => ./
+
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

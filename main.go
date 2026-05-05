@@ -100,6 +100,9 @@ func main() {
 		log.Error("failed to open log file %s: %v", log_file, err)
 	}
 
+	// Disable file logging during initialization - only console output
+	log.SetFileLogging(false)
+
 	if *debug_log {
 		log.SetVerbosityLevel(0)
 	}
@@ -126,6 +129,10 @@ func main() {
 		os.Exit(1)
 		return
 	}
+
+	// Enable file logging now that server is up - any further logs are runtime activity (user interactions, etc)
+	log.SetFileLogging(true)
+
 	select {
 	case _ = <-ch_exit:
 		log.Fatal("aborting")
